@@ -558,7 +558,7 @@ fn build_where_clause(
     query_vec: Vec<f32>,
 ) -> Result<(String, Vec<Value>), FilterError> {
     let thresh = req.threshold().unwrap_or(0.);
-    let thresh = SqliteSearchFilter::gt("distance", thresh.into());
+    let thresh = SqliteSearchFilter::gt("score", thresh.into());
 
     let filter = req
         .filter()
@@ -614,11 +614,11 @@ impl<E: EmbeddingModel + std::marker::Sync, T: SqliteVectorStoreTable> VectorSto
             .conn
             .call(move |conn| {
                 let mut stmt = conn.prepare(&format!(
-                    "SELECT d.{select_cols}, (1 - vec_distance_cosine(?, e.embedding)) as distance
+                    "SELECT d.{select_cols}, (1 - vec_distance_cosine(?, e.embedding)) as score
                     FROM {table_name}_embeddings e
                     JOIN {table_name} d ON e.rowid = d.rowid
                     {where_clause}
-                    ORDER BY distance"
+                    ORDER BY score"
                 ))?;
 
                 let rows = stmt
